@@ -464,7 +464,16 @@ public class TeacherController extends BaseController {
         String paperName = nameObj instanceof String ? (String) nameObj : "";
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> configList = (List<Map<String, Object>>) config.get("configs");
+        Object configsObj = config.get("configs");
+        List<Map<String, Object>> configList;
+        if (configsObj instanceof List) {
+            configList = (List<Map<String, Object>>) configsObj;
+        } else if (configsObj instanceof Map) {
+            configList = new ArrayList<>();
+            configList.add((Map<String, Object>) configsObj);
+        } else {
+            return Result.error("组卷配置格式错误");
+        }
         List<QuestionConfig> questionConfigs = new ArrayList<>();
 
         for (Map<String, Object> item : configList) {
@@ -491,6 +500,8 @@ public class TeacherController extends BaseController {
         paper.setDuration(Integer.parseInt(config.getOrDefault("duration", "120").toString()));
         paper.setPassScore(Integer.parseInt(config.getOrDefault("passScore", "60").toString()));
         paper.setMode("auto");
+        paper.setTotalScore(0);
+        paper.setQuestionCount(0);
 
         List<Long> questionIds = selectedQuestions.stream().map(Question::getId).collect(Collectors.toList());
         List<Integer> scores = selectedQuestions.stream().map(Question::getScore).collect(Collectors.toList());

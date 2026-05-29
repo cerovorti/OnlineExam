@@ -39,6 +39,9 @@ public class PaperController extends BaseController {
     @PostMapping
     public Result<Paper> createPaper(@RequestBody Paper paper, HttpServletRequest request) {
         paper.setCreatorId(getCurrentUserId(request));
+        paper.setMode("manual");
+        if (paper.getTotalScore() == null) paper.setTotalScore(0);
+        if (paper.getQuestionCount() == null) paper.setQuestionCount(0);
         paperService.save(paper);
         return Result.success(paper);
     }

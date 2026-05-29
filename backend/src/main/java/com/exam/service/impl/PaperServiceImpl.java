@@ -61,6 +61,8 @@ public class PaperServiceImpl extends ServiceImpl<PaperMapper, Paper> implements
     @Override
     @Transactional
     public Paper createPaperWithQuestions(Paper paper, List<Long> questionIds, List<Integer> scores) {
+        if (paper.getTotalScore() == null) paper.setTotalScore(0);
+        if (paper.getQuestionCount() == null) paper.setQuestionCount(0);
         this.save(paper);
 
         int totalScore = 0;
