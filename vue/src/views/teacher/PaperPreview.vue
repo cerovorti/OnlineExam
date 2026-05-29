@@ -48,10 +48,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { teacherApi } from '@/api'
 import { questionTypeName as typeName, questionTagType as qTypeTag, difficultyName as diffName, difficultyTagType as diffTag } from '@/utils/constants'
+
+const route = useRoute()
 
 const papers = ref([])
 const selectedPaperId = ref(null)
@@ -83,7 +86,14 @@ const loadPreview = async () => {
   } catch (e) { ElMessage.error('加载试卷预览失败') } finally { previewLoading.value = false }
 }
 
-onMounted(() => { loadPapers() })
+onMounted(async () => {
+  await loadPapers()
+  const pid = route.query.paperId
+  if (pid) {
+    selectedPaperId.value = Number(pid)
+    loadPreview()
+  }
+})
 </script>
 
 <style scoped>

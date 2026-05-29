@@ -59,7 +59,7 @@
           <el-descriptions-item label="及格分">{{ resultPaper.passScore }}</el-descriptions-item>
         </el-descriptions>
         <div style="text-align:center; margin-top:24px">
-          <el-button type="primary" @click="$router.push('/teacher/paper-preview')">查看试卷详情</el-button>
+          <el-button type="primary" @click="$router.push({ path: '/teacher/preview', query: { paperId: resultPaper.id } })">查看试卷详情</el-button>
         </div>
       </div>
     </el-dialog>
