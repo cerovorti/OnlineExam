@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -50,8 +53,23 @@ public class DataInitializer {
     @Autowired
     private SystemLogService systemLogService;
 
+    @Autowired
+    private DataSource dataSource;
+
     @PostConstruct
     public void init() {
+        try {
+            try (Connection conn = dataSource.getConnection();
+                 Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE exam_records MODIFY COLUMN submit_type VARCHAR(20) DEFAULT NULL COMMENT '交卷类型'");
+                System.out.println("Migration: submit_type column altered to VARCHAR(20)");
+            } catch (Exception e) {
+                System.out.println("Migration note: " + e.getMessage());
+            }
+        } catch (Exception outer) {
+            System.out.println("Migration skipped: " + outer.getMessage());
+        }
+
         try {
         if (userService.lambdaQuery().eq(User::getUsername, "admin").count() > 0) {
             return;

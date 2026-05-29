@@ -461,7 +461,7 @@ public class TeacherController extends BaseController {
     public Result<Paper> autoGeneratePaper(@RequestBody Map<String, Object> config, HttpServletRequest request) {
         Long subjectId = Long.valueOf(config.get("subjectId").toString());
         Object nameObj = config.get("name");
-        String paperName = nameObj instanceof String ? (String) nameObj : String.valueOf(nameObj);
+        String paperName = nameObj instanceof String ? (String) nameObj : "";
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> configList = (List<Map<String, Object>>) config.get("configs");
@@ -470,11 +470,11 @@ public class TeacherController extends BaseController {
         for (Map<String, Object> item : configList) {
             QuestionConfig qc = new QuestionConfig();
             Object itemType = item.get("type");
-            qc.setType(itemType instanceof String ? (String) itemType : String.valueOf(itemType));
+            qc.setType(itemType instanceof String ? (String) itemType : "");
             qc.setCount(Integer.parseInt(item.get("count").toString()));
             qc.setScore(Integer.parseInt(item.get("score").toString()));
             Object itemDiff = item.get("difficulty");
-            qc.setDifficulty(itemDiff instanceof String ? (String) itemDiff : String.valueOf(itemDiff));
+            qc.setDifficulty(itemDiff instanceof String ? (String) itemDiff : "");
             questionConfigs.add(qc);
         }
 

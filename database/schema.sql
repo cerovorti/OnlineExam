@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS exam_records (
     score DECIMAL(5,2) DEFAULT NULL COMMENT '得分',
     passed TINYINT DEFAULT NULL COMMENT '是否及格',
     cut_screen_count INT DEFAULT 0 COMMENT '切屏次数',
-    submit_type ENUM('manual', 'timeout', 'cutscreen', 'auto') DEFAULT NULL COMMENT '交卷类型',
+    submit_type VARCHAR(20) DEFAULT NULL COMMENT '交卷类型',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,

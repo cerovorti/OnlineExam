@@ -173,7 +173,7 @@ public class StudentController extends BaseController {
                                                    HttpServletRequest request) {
         Long studentId = getStudentId(request);
         Object typeObj = data.getOrDefault("type", "manual");
-        String submitType = typeObj instanceof String ? (String) typeObj : String.valueOf(typeObj);
+        String submitType = typeObj instanceof String ? (String) typeObj : "manual";
         Integer cutScreenCount = data.get("cutScreenCount") != null
                 ? Integer.parseInt(data.get("cutScreenCount").toString()) : 0;
 
