@@ -208,12 +208,37 @@ const loadExam = async () => {
   try {
     loadError.value = ''
     examStore.resetAll()
+
+    const detailRes = await studentApi.getExamDetail(examId)
+    if (detailRes.code !== 200 || !detailRes.data) {
+      loadError.value = detailRes.message || '获取考试信息失败'
+      return
+    }
+    const { exam: examDetail, record } = detailRes.data
+
+    const now = Date.now()
+    const startTime = examDetail?.startTime ? new Date(examDetail.startTime).getTime() : null
+    const endTime = examDetail?.endTime ? new Date(examDetail.endTime).getTime() : null
+
+    if (startTime && now < startTime) {
+      loadError.value = '考试尚未开始，开始时间：' + examDetail.startTime
+      return
+    }
+
+    if (endTime && now > endTime) {
+      const isInProgress = record && record.status === 'in_progress'
+      if (!isInProgress) {
+        loadError.value = '考试已结束'
+        return
+      }
+    }
+
     console.log('[ExamTaking] loadExam start, examId=', examId)
     const res = await studentApi.startExam(examId)
     console.log('[ExamTaking] startExam response:', JSON.stringify({ code: res.code, hasData: !!res.data }))
     if (res.code === 200 && res.data) {
-      const { exam, questions: qs, record, duration, remainingSeconds: remSec, answers: existingAnswers } = res.data
-      console.log('[ExamTaking] parsed: exam=', !!exam, 'questions=', qs?.length, 'record=', !!record, 'duration=', duration, 'remSec=', remSec)
+      const { exam, questions: qs, record: rec, duration, remainingSeconds: remSec, answers: existingAnswers } = res.data
+      console.log('[ExamTaking] parsed: exam=', !!exam, 'questions=', qs?.length, 'record=', !!rec, 'duration=', duration, 'remSec=', remSec)
       examInfo.value = exam || { name: '考试' }
       if (Array.isArray(qs) && qs.length > 0) {
         questions.value = qs
@@ -222,7 +247,7 @@ const loadExam = async () => {
         loadError.value = '试卷未包含题目，请确认组卷是否正确'
         return
       }
-      recordId.value = record?.id
+      recordId.value = rec?.id
       remainingSeconds.value = (remSec > 0 ? remSec : (duration || 120) * 60)
       if (exam?.maxCutScreen) examStore.maxCutScreen = exam.maxCutScreen
       if (existingAnswers) {
@@ -246,10 +271,15 @@ const retryLoad = () => {
 onMounted(async () => {
   await loadExam()
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  const examEndTime = examInfo.value?.endTime ? new Date(examInfo.value.endTime).getTime() : null
   timer = setInterval(() => {
     if (remainingSeconds.value > 0) {
       remainingSeconds.value--
     } else {
+      submitPaper('timeout')
+      return
+    }
+    if (examEndTime && Date.now() >= examEndTime) {
       submitPaper('timeout')
     }
   }, 1000)

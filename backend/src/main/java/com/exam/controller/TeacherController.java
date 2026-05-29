@@ -517,7 +517,7 @@ public class TeacherController extends BaseController {
                 if (question == null) continue;
 
                 String type = question.getType();
-                if (!"short_answer".equals(type)) continue;
+                if (!"short_answer".equals(type) && !"fill".equals(type) && !"programming".equals(type)) continue;
 
                 Map<String, Object> item = new HashMap<>();
                 item.put("id", answer.getId());

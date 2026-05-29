@@ -1,15 +1,25 @@
--- 在线考试系统数据库设计
--- Database: online_exam_system
+-- =============================================
+-- 在线考试系统 - 数据库完整脚本
+-- 包含：建库 + 建表（16张） + 初始测试数据
+-- 编码：UTF-8  (MySQL 8.0+)
+-- 使用方式：mysql -u root -p < online_exam_system.sql
+-- =============================================
 
--- 创建数据库
+-- ----------------------------
+-- Part 1: 建库
+-- ----------------------------
 CREATE DATABASE IF NOT EXISTS online_exam_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE online_exam_system;
+
+-- ----------------------------
+-- Part 2: 建表（16 张）
+-- ----------------------------
 
 -- 1. 用户表
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
     username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-    password VARCHAR(255) NOT NULL COMMENT '密码',
+    password VARCHAR(255) NOT NULL COMMENT '密码（BCrypt加密）',
     role ENUM('admin', 'teacher', 'student') NOT NULL COMMENT '角色',
     name VARCHAR(50) NOT NULL COMMENT '姓名',
     avatar VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
@@ -97,7 +107,7 @@ CREATE TABLE IF NOT EXISTS questions (
     subject_id BIGINT NOT NULL COMMENT '科目ID',
     type ENUM('single', 'multiple', 'judge', 'fill', 'short_answer', 'programming') NOT NULL COMMENT '题型',
     title TEXT NOT NULL COMMENT '题目内容',
-    options JSON DEFAULT NULL COMMENT '选项JSON',
+    options JSON DEFAULT NULL COMMENT '选项（JSON格式）',
     answer TEXT NOT NULL COMMENT '正确答案',
     analysis TEXT DEFAULT NULL COMMENT '题目解析',
     difficulty ENUM('easy', 'medium', 'hard') DEFAULT 'medium' COMMENT '难度',
@@ -123,9 +133,9 @@ CREATE TABLE IF NOT EXISTS papers (
     creator_id BIGINT NOT NULL COMMENT '创建者ID',
     total_score INT NOT NULL COMMENT '试卷总分',
     pass_score INT DEFAULT 60 COMMENT '及格分数',
-    duration INT NOT NULL COMMENT '考试时长分钟',
+    duration INT NOT NULL COMMENT '考试时长（分钟）',
     mode ENUM('manual', 'auto') NOT NULL COMMENT '组卷方式',
-    config JSON DEFAULT NULL COMMENT '组卷配置JSON',
+    config JSON DEFAULT NULL COMMENT '组卷配置（JSON）',
     question_count INT NOT NULL COMMENT '题目数量',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -198,7 +208,7 @@ CREATE TABLE IF NOT EXISTS exam_records (
     score DECIMAL(5,2) DEFAULT NULL COMMENT '得分',
     passed TINYINT DEFAULT NULL COMMENT '是否及格',
     cut_screen_count INT DEFAULT 0 COMMENT '切屏次数',
-    submit_type VARCHAR(20) DEFAULT NULL COMMENT '交卷类型',
+    submit_type VARCHAR(20) DEFAULT NULL COMMENT '交卷类型（manual/timeout/cutscreen/auto）',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
@@ -274,4 +284,45 @@ CREATE TABLE IF NOT EXISTS exam_extensions (
     INDEX idx_exam_record_id (exam_record_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='考试延长时间记录表';
 
--- 15. 系统日志表
+-- ----------------------------
+-- Part 3: 初始测试数据
+-- ----------------------------
+
+-- 院系
+INSERT IGNORE INTO departments (id, name, parent_id, description) VALUES
+(1, '计算机科学与技术学院', NULL, '计算机科学与技术相关专业'),
+(2, '软件工程系', 1, '软件工程相关专业'),
+(3, '网络工程系', 1, '网络工程相关专业');
+
+-- 班级
+INSERT IGNORE INTO classes (id, class_name, department_id, major, grade, student_count) VALUES
+(1, '软件工程2023-1班', 2, '软件工程', '2023级', 40),
+(2, '计算机科学2023-1班', 1, '计算机科学与技术', '2023级', 35),
+(3, '网络工程2023-B班', 3, '网络工程', '2023级', 30);
+
+-- 科目
+INSERT IGNORE INTO subjects (name, code, description) VALUES
+('Java程序设计', 'CS101', 'Java编程语言基础与面向对象编程'),
+('数据结构', 'CS102', '数据结构与算法'),
+('数据库原理', 'CS103', '数据库系统原理与应用'),
+('计算机网络', 'CS104', '计算机网络基础'),
+('操作系统', 'CS105', '操作系统原理');
+
+-- 题库
+INSERT IGNORE INTO questions (subject_id, type, title, options, answer, analysis, difficulty, knowledge_points, score, creator_id) VALUES
+(1, 'single', '下列哪个是Java的保留字？', '{"A":"include","B":"define","C":"goto","D":"NULL"}', 'C', 'goto是Java的保留字', 'easy', 'Java基础', 2, 2),
+(1, 'single', '下列哪个集合类是线程安全的？', '{"A":"ArrayList","B":"LinkedList","C":"Vector","D":"HashSet"}', 'C', 'Vector是同步的线程安全集合', 'medium', '集合框架', 2, 2),
+(1, 'single', 'Java中基本数据类型有哪些？', '{"A":"int, float, boolean","B":"Integer, Float, Boolean","C":"String, Object, Class","D":"List, Set, Map"}', 'A', 'int, float, boolean是基本数据类型', 'easy', 'Java基础', 2, 2),
+(1, 'multiple', '以下哪些是面向对象的特性？', '{"A":"封装","B":"继承","C":"多态","D":"抽象"}', 'ABCD', '面向对象四大特性：封装、继承、多态、抽象', 'easy', '面向对象', 3, 2),
+(1, 'judge', 'Java支持多重继承。', NULL, '0', 'Java只支持单继承，可通过接口实现多重继承效果', 'easy', '面向对象', 1, 2),
+(1, 'short_answer', '简述面向对象的三大特性。', NULL, '封装、继承、多态', '封装隐藏实现细节，继承实现代码复用，多态实现灵活调用', 'medium', '面向对象', 10, 2);
+
+INSERT IGNORE INTO questions (subject_id, type, title, options, answer, analysis, difficulty, knowledge_points, score, creator_id) VALUES
+(2, 'single', '栈和队列的共同特点是什么？', '{"A":"只允许在端点处插入和删除元素","B":"都是先进后出","C":"都是先进先出","D":"没有共同点"}', 'A', '栈和队列都只允许在端点处插入和删除元素', 'easy', '线性表', 2, 2),
+(2, 'single', '快速排序的时间复杂度是多少？', '{"A":"O(n)","B":"O(nlogn)","C":"O(n^2)","D":"O(logn)"}', 'B', '快速排序平均时间复杂度为O(nlogn)', 'medium', '排序算法', 2, 2),
+(2, 'judge', '二叉树中，度为0的节点数等于度为2的节点数加1。', NULL, '1', '对于任意二叉树，n0 = n2 + 1', 'medium', '树', 2, 2);
+
+INSERT IGNORE INTO questions (subject_id, type, title, options, answer, analysis, difficulty, knowledge_points, score, creator_id) VALUES
+(3, 'single', 'SQL中查询数据使用哪个关键字？', '{"A":"INSERT","B":"SELECT","C":"UPDATE","D":"DELETE"}', 'B', 'SELECT关键字用于从数据库中查询数据', 'easy', 'SQL基础', 2, 2),
+(3, 'multiple', '以下哪些是数据库完整性约束？', '{"A":"主键约束","B":"外键约束","C":"唯一约束","D":"检查约束"}', 'ABCD', '四种都是常见的数据库完整性约束', 'medium', '数据库设计', 3, 2),
+(3, 'judge', '数据库的第三范式要求消除传递依赖。', NULL, '1', '第三范式要求非主属性不传递依赖于候选键', 'medium', '数据库范式', 2, 2);

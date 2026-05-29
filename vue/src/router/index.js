@@ -15,6 +15,7 @@ const routes = [
       { path: 'students', component: () => import('../views/admin/StudentManage.vue'), meta: { title: '学生管理' } },
       { path: 'teachers', component: () => import('../views/admin/TeacherManage.vue'), meta: { title: '教师管理' } },
       { path: 'departments', component: () => import('../views/admin/DepartmentManage.vue'), meta: { title: '班级/院系管理' } },
+      { path: 'subjects', component: () => import('../views/admin/SubjectManage.vue'), meta: { title: '科目管理' } },
       { path: 'logs', component: () => import('../views/admin/SystemLog.vue'), meta: { title: '系统日志' } },
     ]
   },
@@ -31,6 +32,7 @@ const routes = [
       { path: 'monitor', component: () => import('../views/teacher/ExamMonitor.vue'), meta: { title: '考试监控' } },
       { path: 'preview', component: () => import('../views/teacher/PaperPreview.vue'), meta: { title: '试卷预览' } },
       { path: 'analysis', component: () => import('../views/teacher/ScoreAnalysis.vue'), meta: { title: '成绩分析' } },
+      { path: 'grading', component: () => import('../views/teacher/TeacherGrading.vue'), meta: { title: '主观题阅卷' } },
     ]
   },
   {

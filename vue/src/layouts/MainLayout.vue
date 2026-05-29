@@ -28,6 +28,10 @@
             <el-icon><OfficeBuilding /></el-icon>
             <span>班级/院系管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin/subjects">
+            <el-icon><Collection /></el-icon>
+            <span>科目管理</span>
+          </el-menu-item>
           <el-menu-item index="/admin/logs">
             <el-icon><Document /></el-icon>
             <span>系统日志</span>
@@ -58,6 +62,10 @@
           <el-menu-item index="/teacher/analysis">
             <el-icon><PieChart /></el-icon>
             <span>成绩分析</span>
+          </el-menu-item>
+          <el-menu-item index="/teacher/grading">
+            <el-icon><EditPen /></el-icon>
+            <span>主观题阅卷</span>
           </el-menu-item>
         </template>
 

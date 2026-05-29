@@ -338,6 +338,10 @@ public class StudentController extends BaseController {
         analysis.put("totalExams", records.size());
 
         if (records.isEmpty()) {
+            analysis.put("trendSubjects", new ArrayList<>());
+            analysis.put("trendScores", new ArrayList<>());
+            analysis.put("radarIndicators", new ArrayList<>());
+            analysis.put("radarValues", new ArrayList<>());
             return Result.success(analysis);
         }
 
@@ -353,18 +357,37 @@ public class StudentController extends BaseController {
         analysis.put("passRate", records.size() > 0
                 ? Math.round((double) passCount / records.size() * 1000.0) / 10.0 : 0);
 
-        List<Map<String, Object>> trend = new ArrayList<>();
+        List<String> trendSubjects = new ArrayList<>();
+        List<Double> trendScores = new ArrayList<>();
         for (ExamRecord record : records) {
-            Map<String, Object> point = new HashMap<>();
             Exam exam = examService.getById(record.getExamId());
-            Paper paper = exam != null ? paperService.getById(exam.getPaperId()) : null;
-            point.put("examName", exam != null ? exam.getName() : "未知");
-            point.put("score", record.getScore());
-            point.put("passScore", paper != null ? paper.getPassScore() : null);
-            point.put("date", record.getSubmitTime());
-            trend.add(point);
+            trendSubjects.add(exam != null ? exam.getName() : "未知");
+            trendScores.add(record.getScore() != null ? record.getScore().doubleValue() : 0);
         }
-        analysis.put("scoreTrend", trend);
+        analysis.put("trendSubjects", trendSubjects);
+        analysis.put("trendScores", trendScores);
+
+        Map<Long, List<Double>> subjectScores = new LinkedHashMap<>();
+        for (ExamRecord record : records) {
+            Exam exam = examService.getById(record.getExamId());
+            if (exam == null) continue;
+            Paper paper = paperService.getById(exam.getPaperId());
+            if (paper == null || paper.getSubjectId() == null) continue;
+            subjectScores.computeIfAbsent(paper.getSubjectId(), k -> new ArrayList<>())
+                    .add(record.getScore() != null ? record.getScore().doubleValue() : 0);
+        }
+
+        List<String> radarIndicators = new ArrayList<>();
+        List<Double> radarValues = new ArrayList<>();
+        for (Map.Entry<Long, List<Double>> entry : subjectScores.entrySet()) {
+            Subject subject = subjectService.getById(entry.getKey());
+            String name = subject != null ? subject.getName() : "科目" + entry.getKey();
+            double avg = entry.getValue().stream().mapToDouble(Double::doubleValue).average().orElse(0);
+            radarIndicators.add(name);
+            radarValues.add(Math.round(avg * 10.0) / 10.0);
+        }
+        analysis.put("radarIndicators", radarIndicators);
+        analysis.put("radarValues", radarValues);
 
         return Result.success(analysis);
     }
