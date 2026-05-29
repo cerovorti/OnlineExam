@@ -1,0 +1,15 @@
+node_modules/
+dist/
+target/
+*.class
+*.jar
+*.war
+*.log
+*.pid
+*.iml
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+test_result.txt
+test_response.json
