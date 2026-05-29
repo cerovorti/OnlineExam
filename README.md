@@ -1,6 +1,6 @@
 # 在线考试系统
 
-基于 **Vue 3 + Spring Boot 2.7** 的全功能在线考试平台，支持管理员、教师、学生三种角色。
+基于 **Vue 3 + Spring Boot 2.7** 的简单在线考试平台，支持管理员、教师、学生三种角色。
 
 ---
 
@@ -92,10 +92,10 @@ mvn spring-boot:run
 | 账号 | 角色 | 说明 |
 |------|:--:|------|
 | `admin` | 管理员 | 系统管理员 |
-| `teacher1` | 教师 | 教师账号 |
-| `teacher2` | 教师 | 教师账号 |
-| `teacher3` | 教师 | 教师账号 |
-| `student001` ~ `student010` | 学生 | 10 个学生账号 |
+| `teacher001` | 教师 | 张老师 |
+| `teacher002` | 教师 | 李老师 |
+| `teacher003` | 教师 | 王教授 |
+| `student001` ~ `student004` | 学生 | 4 个学生账号 |
 
 后端启动默认端口：**8080**  
 Swagger 文档：http://localhost:8080/doc.html

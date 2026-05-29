@@ -82,9 +82,9 @@ if errorlevel 1 (
     echo   已导入初始测试数据（院系、班级、科目、题库）
     echo.
     echo   首次启动后端时，DataInitializer会自动创建内置账号：
-    echo   管理员:   admin      密码: 123456
-    echo   教师:     teacher1   密码: 123456
-    echo   学生:     student001 密码: 123456
+    echo   管理员:   admin         密码: 123456
+    echo   教师:     teacher001    密码: 123456
+    echo   学生:     student001    密码: 123456
 )
 
 echo.
