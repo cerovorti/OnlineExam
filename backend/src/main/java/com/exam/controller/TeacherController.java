@@ -341,29 +341,35 @@ public class TeacherController extends BaseController {
                 new LambdaQueryWrapper<ExamRecord>().eq(ExamRecord::getExamId, id)
         );
 
-        response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=exam_scores_" + id + ".csv");
-        response.getWriter().write('\uFEFF');
-        response.getWriter().write("学号,姓名,得分,满分,及格分,是否及格,交卷时间,交卷方式,切屏次数\n");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=exam_scores_" + id + ".xlsx");
 
-        for (ExamRecord record : records) {
-            Student student = studentService.getById(record.getStudentId());
-            String studentNo = student != null ? student.getStudentNo() : "";
-            String studentName = student != null ? student.getStudentName() : "";
-            String score = record.getScore() != null ? record.getScore().toString() : "";
-            String totalScore = paper != null ? String.valueOf(paper.getTotalScore()) : "";
-            String passScore = paper != null ? String.valueOf(paper.getPassScore()) : "";
-            String passed = record.getPassed() != null ? (record.getPassed() == 1 ? "是" : "否") : "";
-            String submitTime = record.getSubmitTime() != null ? record.getSubmitTime().toString() : "";
-            String submitType = record.getSubmitType() != null ? record.getSubmitType() : "";
-            String cutScreen = record.getCutScreenCount() != null ? String.valueOf(record.getCutScreenCount()) : "0";
-
-            response.getWriter().write(String.join(",",
-                    studentNo, studentName, score, totalScore, passScore,
-                    passed, submitTime, submitType, cutScreen) + "\n");
+        org.apache.poi.xssf.usermodel.XSSFWorkbook wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+        org.apache.poi.xssf.usermodel.XSSFSheet sheet = wb.createSheet("成绩表");
+        org.apache.poi.xssf.usermodel.XSSFRow headerRow = sheet.createRow(0);
+        String[] headers = {"学号", "姓名", "得分", "满分", "及格分", "是否及格", "交卷时间", "交卷方式", "切屏次数"};
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
         }
 
-        response.getWriter().flush();
+        int rowIdx = 1;
+        for (ExamRecord record : records) {
+            Student student = studentService.getById(record.getStudentId());
+            org.apache.poi.xssf.usermodel.XSSFRow row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(student != null ? student.getStudentNo() : "");
+            row.createCell(1).setCellValue(student != null ? student.getStudentName() : "");
+            row.createCell(2).setCellValue(record.getScore() != null ? record.getScore().doubleValue() : 0);
+            row.createCell(3).setCellValue(paper != null ? paper.getTotalScore() : 0);
+            row.createCell(4).setCellValue(paper != null ? paper.getPassScore() : 0);
+            row.createCell(5).setCellValue(record.getPassed() != null && record.getPassed() == 1 ? "是" : "否");
+            row.createCell(6).setCellValue(record.getSubmitTime() != null ? record.getSubmitTime().toString() : "");
+            row.createCell(7).setCellValue(record.getSubmitType() != null ? record.getSubmitType() : "");
+            row.createCell(8).setCellValue(record.getCutScreenCount() != null ? String.valueOf(record.getCutScreenCount()) : "0");
+        }
+
+        wb.write(response.getOutputStream());
+        wb.close();
+        response.getOutputStream().flush();
     }
 
     @PostMapping("/papers/{id}/questions")

@@ -242,7 +242,7 @@ const loadQuestionQuality = async () => {
 
 const handleExport = () => {
   teacherApi.exportExamScores(selectedExamId.value).then(res => {
-    const url = URL.createObjectURL(new Blob([res]))
+    const url = URL.createObjectURL(res)
     const a = document.createElement('a')
     a.href = url
     a.download = '成绩导出.xlsx'

@@ -117,17 +117,20 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="importVisible" title="导入题目" width="450px">
-      <el-upload
-        drag
-        :auto-upload="false"
-        :on-change="handleFileChange"
-        :limit="1"
+    <el-dialog v-model="importVisible" title="导入题目" width="450px" @closed="importFile = null">
+      <input
+        ref="fileInputRef"
+        type="file"
         accept=".xlsx,.xls"
-      >
-        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-        <div class="el-upload__text">将Excel文件拖到此处，或<em>点击上传</em></div>
-      </el-upload>
+        style="display:none"
+        @change="handleFileSelected"
+      />
+      <div class="upload-zone" @click="$refs.fileInputRef.click()" @dragover.prevent @drop.prevent="handleDrop">
+        <el-icon :size="48" color="#409eff"><upload-filled /></el-icon>
+        <div class="upload-text">
+          {{ importFile ? importFile.name : '将Excel文件拖到此处，或点击上传' }}
+        </div>
+      </div>
       <template #footer>
         <el-button @click="importVisible = false">取消</el-button>
         <el-button type="primary" :loading="importing" @click="doImport">开始导入</el-button>
@@ -225,12 +228,19 @@ const handleDelete = async (row) => {
 }
 
 const handleImport = () => {
-  importFile.value = null
   importVisible.value = true
 }
 
-const handleFileChange = (file) => {
-  importFile.value = file.raw
+const handleFileSelected = (e) => {
+  const file = e.target.files?.[0]
+  if (file) importFile.value = file
+  // reset so same file can be re-selected
+  e.target.value = ''
+}
+
+const handleDrop = (e) => {
+  const file = e.dataTransfer?.files?.[0]
+  if (file) importFile.value = file
 }
 
 const doImport = async () => {
@@ -241,12 +251,15 @@ const doImport = async () => {
     ElMessage.success('导入成功')
     importVisible.value = false
     loadData()
-  } catch (e) { ElMessage.error('导入失败') } finally { importing.value = false }
+  } catch (e) {
+    const msg = e?.response?.data?.message || e?.data?.message || '导入失败'
+    ElMessage.error(msg)
+  } finally { importing.value = false }
 }
 
 const handleDownloadTemplate = () => {
   teacherApi.downloadQuestionTemplate().then(res => {
-    const url = URL.createObjectURL(new Blob([res]))
+    const url = URL.createObjectURL(res)
     const a = document.createElement('a')
     a.href = url
     a.download = '题目导入模板.xlsx'
@@ -266,4 +279,20 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .filter-form { margin-bottom: 16px; }
+.upload-zone {
+  border: 2px dashed #dcdfe6;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .3s;
+}
+.upload-zone:hover {
+  border-color: #409eff;
+}
+.upload-text {
+  margin-top: 12px;
+  color: #606266;
+  font-size: 14px;
+}
 </style>

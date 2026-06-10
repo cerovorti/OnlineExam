@@ -72,9 +72,7 @@ export const adminApi = {
   importStudents(file) {
     const formData = new FormData()
     formData.append('file', file)
-    return request.post('/admin/students/import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    return request.post('/admin/students/import', formData)
   },
   downloadTemplate() {
     return request.get('/admin/students/template', { responseType: 'blob' })
@@ -160,9 +158,7 @@ export const teacherApi = {
   importQuestions(file) {
     const formData = new FormData()
     formData.append('file', file)
-    return request.post('/teacher/questions/import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    return request.post('/teacher/questions/import', formData)
   },
   downloadQuestionTemplate() {
     return request.get('/teacher/questions/template', { responseType: 'blob' })

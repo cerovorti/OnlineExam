@@ -63,6 +63,8 @@ public class DataInitializer {
                  Statement stmt = conn.createStatement()) {
                 stmt.execute("ALTER TABLE exam_records MODIFY COLUMN submit_type VARCHAR(20) DEFAULT NULL COMMENT '交卷类型'");
                 System.out.println("Migration: submit_type column altered to VARCHAR(20)");
+                stmt.execute("ALTER TABLE questions MODIFY COLUMN options TEXT DEFAULT NULL COMMENT '选项'");
+                System.out.println("Migration: questions.options column altered to TEXT");
             } catch (Exception e) {
                 System.out.println("Migration note: " + e.getMessage());
             }

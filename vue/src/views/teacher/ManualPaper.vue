@@ -13,8 +13,9 @@
         <el-table-column prop="totalScore" label="总分" width="80" />
         <el-table-column prop="duration" label="考试时长(分钟)" width="120" />
         <el-table-column prop="passScore" label="及格分" width="80" />
-        <el-table-column label="操作" width="140">
+        <el-table-column label="操作" width="180">
           <template #default="{ row }">
+            <el-button type="primary" link @click.stop="$router.push({ path: '/teacher/preview', query: { paperId: row.id } })">预览</el-button>
             <el-button type="danger" link @click.stop="handleDeletePaper(row)">删除</el-button>
           </template>
         </el-table-column>

@@ -82,34 +82,48 @@ public class QuestionController extends BaseController {
             org.apache.poi.ss.usermodel.Sheet sheet = wb.getSheetAt(0);
             Long userId = getCurrentUserId(request);
             int saved = 0;
+            int skipped = 0;
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 org.apache.poi.ss.usermodel.Row row = sheet.getRow(i);
                 if (row == null) continue;
-                String type = getCellVal(row, 0);
-                String title = getCellVal(row, 1);
-                String options = getCellVal(row, 2);
-                String answer = getCellVal(row, 3);
-                String difficulty = getCellVal(row, 4);
-                String knowledgePoints = getCellVal(row, 5);
-                String scoreStr = getCellVal(row, 6);
-                Long subjectId = Long.valueOf(getCellVal(row, 7));
+                try {
+                    String type = getCellVal(row, 0);
+                    String title = getCellVal(row, 1);
+                    String options = getCellVal(row, 2);
+                    String answer = getCellVal(row, 3);
+                    String difficulty = getCellVal(row, 4);
+                    String knowledgePoints = getCellVal(row, 5);
+                    String scoreStr = getCellVal(row, 6);
+                    String subjectIdStr = getCellVal(row, 7);
 
-                if (title.isEmpty()) continue;
+                    if (title.isEmpty()) continue;
+                    if (type.isEmpty() || answer.isEmpty() || subjectIdStr.isEmpty()) {
+                        skipped++;
+                        continue;
+                    }
 
-                Question q = new Question();
-                q.setType(type);
-                q.setTitle(title);
-                q.setOptions(options.isEmpty() ? null : options);
-                q.setAnswer(answer);
-                q.setDifficulty(difficulty.isEmpty() ? "medium" : difficulty);
-                q.setKnowledgePoints(knowledgePoints.isEmpty() ? null : knowledgePoints);
-                q.setScore(scoreStr.isEmpty() ? 1 : Integer.parseInt(scoreStr));
-                q.setSubjectId(subjectId);
-                q.setCreatorId(userId);
-                questionService.save(q);
-                saved++;
+                    Question q = new Question();
+                    q.setType(type);
+                    q.setTitle(title);
+                    q.setOptions(options.isEmpty() ? null : options);
+                    q.setAnswer(answer);
+                    q.setDifficulty(difficulty.isEmpty() ? "medium" : difficulty);
+                    q.setKnowledgePoints(knowledgePoints.isEmpty() ? null : knowledgePoints);
+                    int score = 1;
+                    try { score = Integer.parseInt(scoreStr); } catch (NumberFormatException ignored) {}
+                    q.setScore(score);
+                    q.setSubjectId(Long.valueOf(subjectIdStr));
+                    q.setCreatorId(userId);
+                    questionService.save(q);
+                    saved++;
+                } catch (Exception rowEx) {
+                     skipped++;
+                 }
             }
             wb.close();
+            if (saved == 0 && skipped > 0) {
+                return Result.error("没有导入任何题目，请检查Excel内容格式是否正确");
+            }
             return Result.success();
         } catch (Exception e) {
             return Result.error("导入失败：" + e.getMessage());
@@ -118,18 +132,47 @@ public class QuestionController extends BaseController {
 
     @GetMapping("/template")
     public void downloadTemplate(HttpServletResponse response) throws IOException {
-        response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=question_template.csv");
-        response.getWriter().write('\uFEFF');
-        response.getWriter().write("题型,题目,选项,答案,难度,知识点,分值,科目ID\n");
-        response.getWriter().write("single,Java的保留字是什么？,\"A.include|B.define|C.goto|D.NULL\",C,easy,Java基础,2,1\n");
-        response.getWriter().flush();
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=question_template.xlsx");
+
+        org.apache.poi.xssf.usermodel.XSSFWorkbook wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+        org.apache.poi.xssf.usermodel.XSSFSheet sheet = wb.createSheet("题目导入模板");
+        org.apache.poi.xssf.usermodel.XSSFRow headerRow = sheet.createRow(0);
+        String[] headers = {"题型", "题目", "选项", "答案", "难度", "知识点", "分值", "科目ID"};
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+        org.apache.poi.xssf.usermodel.XSSFRow row = sheet.createRow(1);
+        row.createCell(0).setCellValue("single");
+        row.createCell(1).setCellValue("Java的保留字是什么？");
+        row.createCell(2).setCellValue("A.include|B.define|C.goto|D.NULL");
+        row.createCell(3).setCellValue("C");
+        row.createCell(4).setCellValue("easy");
+        row.createCell(5).setCellValue("Java基础");
+        row.createCell(6).setCellValue("2");
+        row.createCell(7).setCellValue("1");
+
+        wb.write(response.getOutputStream());
+        wb.close();
+        response.getOutputStream().flush();
     }
 
     private String getCellVal(org.apache.poi.ss.usermodel.Row row, int col) {
         org.apache.poi.ss.usermodel.Cell cell = row.getCell(col);
         if (cell == null) return "";
-        cell.setCellType(org.apache.poi.ss.usermodel.CellType.STRING);
-        return cell.getStringCellValue().trim();
+        switch (cell.getCellType()) {
+            case NUMERIC:
+                double d = cell.getNumericCellValue();
+                if (d == Math.floor(d) && !Double.isInfinite(d)) {
+                    return String.valueOf((long) d);
+                }
+                return String.valueOf(d);
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case FORMULA:
+                try { return cell.getStringCellValue().trim(); } catch (Exception e) { return String.valueOf((long) cell.getNumericCellValue()); }
+            default:
+                return "";
+        }
     }
 }

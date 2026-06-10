@@ -310,31 +310,40 @@ public class AdminController extends BaseController {
             Workbook wb = WorkbookFactory.create(file.getInputStream());
             Sheet sheet = wb.getSheetAt(0);
             int saved = 0;
+            int skipped = 0;
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
-                String studentNo = getCellValue(row, 0);
-                String name = getCellValue(row, 1);
-                Long classId = Long.valueOf(getCellValue(row, 2));
-                if (studentNo.isEmpty()) continue;
+                try {
+                    String studentNo = getCellValue(row, 0);
+                    String name = getCellValue(row, 1);
+                    String classIdStr = getCellValue(row, 2);
+                    if (studentNo.isEmpty() || name.isEmpty() || classIdStr.isEmpty()) {
+                        skipped++;
+                        continue;
+                    }
+                    Long classId = Long.valueOf(classIdStr);
 
-                Student student = new Student();
-                student.setStudentNo(studentNo);
-                student.setStudentName(name);
-                student.setClassId(classId);
-                studentService.save(student);
+                    Student student = new Student();
+                    student.setStudentNo(studentNo);
+                    student.setStudentName(name);
+                    student.setClassId(classId);
+                    studentService.save(student);
 
-                User existingUser = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUsername, studentNo));
-                if (existingUser == null) {
-                    User user = new User();
-                    user.setUsername(studentNo);
-                    user.setPassword(PasswordUtil.encode("123456"));
-                    user.setRole("student");
-                    userService.save(user);
-                    student.setUserId(user.getId());
-                    studentService.updateById(student);
+                    User existingUser = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUsername, studentNo));
+                    if (existingUser == null) {
+                        User user = new User();
+                        user.setUsername(studentNo);
+                        user.setPassword(PasswordUtil.encode("123456"));
+                        user.setRole("student");
+                        userService.save(user);
+                        student.setUserId(user.getId());
+                        studentService.updateById(student);
+                    }
+                    saved++;
+                } catch (Exception rowEx) {
+                    skipped++;
                 }
-                saved++;
             }
             wb.close();
             return Result.success();
@@ -383,7 +392,19 @@ public class AdminController extends BaseController {
     private String getCellValue(Row row, int col) {
         Cell cell = row.getCell(col);
         if (cell == null) return "";
-        cell.setCellType(CellType.STRING);
-        return cell.getStringCellValue().trim();
+        switch (cell.getCellType()) {
+            case NUMERIC:
+                double d = cell.getNumericCellValue();
+                if (d == Math.floor(d) && !Double.isInfinite(d)) {
+                    return String.valueOf((long) d);
+                }
+                return String.valueOf(d);
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case FORMULA:
+                try { return cell.getStringCellValue().trim(); } catch (Exception e) { return String.valueOf((long) cell.getNumericCellValue()); }
+            default:
+                return "";
+        }
     }
 }

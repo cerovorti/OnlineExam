@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS questions (
     subject_id BIGINT NOT NULL COMMENT '科目ID',
     type ENUM('single', 'multiple', 'judge', 'fill', 'short_answer', 'programming') NOT NULL COMMENT '题型',
     title TEXT NOT NULL COMMENT '题目内容',
-    options JSON DEFAULT NULL COMMENT '选项（JSON格式）',
+    options TEXT DEFAULT NULL COMMENT '选项（如 A.xxx|B.xxx|C.xxx|D.xxx 格式）',
     answer TEXT NOT NULL COMMENT '正确答案',
     analysis TEXT DEFAULT NULL COMMENT '题目解析',
     difficulty ENUM('easy', 'medium', 'hard') DEFAULT 'medium' COMMENT '难度',
