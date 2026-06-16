@@ -162,14 +162,24 @@ const typeLabel = questionTypeName
 
 const parseOptions = (options) => {
   if (!options) return {}
-  try {
-    if (typeof options === 'string') {
-      return JSON.parse(options)
-    }
-    return options
-  } catch {
-    return {}
+  // JSON format: {"A":"xxx","B":"yyy"}
+  if (typeof options === 'string' && options.trim().startsWith('{')) {
+    try { return JSON.parse(options) } catch { /* fall through */ }
   }
+  // Pipe-separated format: "A.xxx|B.yyy|C.zzz"
+  if (typeof options === 'string') {
+    const result = {}
+    options.split('|').forEach(item => {
+      const idx = item.indexOf('.')
+      if (idx > 0) {
+        result[item.substring(0, idx)] = item.substring(idx + 1)
+      }
+    })
+    if (Object.keys(result).length > 0) return result
+  }
+  // Already an object
+  if (typeof options === 'object') return options
+  return {}
 }
 
 const switchQuestion = (index) => {

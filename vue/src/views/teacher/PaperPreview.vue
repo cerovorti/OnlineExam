@@ -65,7 +65,22 @@ const previewLoading = ref(false)
 const parseOptions = (opts) => {
   if (!opts) return []
   if (Array.isArray(opts)) return opts
-  return opts.split('\n').filter(o => o.trim())
+  // JSON format: {"A":"xxx","B":"yyy"}
+  if (typeof opts === 'string' && opts.trim().startsWith('{')) {
+    try {
+      const obj = JSON.parse(opts)
+      return Object.entries(obj).map(([k, v]) => k + '. ' + v)
+    } catch { /* fall through */ }
+  }
+  // Pipe-separated: "A.xxx|B.yyy" or newline-separated
+  if (typeof opts === 'string') {
+    const parts = opts.includes('|') ? opts.split('|') : opts.split('\n')
+    return parts.map(o => o.trim()).filter(o => o)
+  }
+  if (typeof opts === 'object') {
+    return Object.entries(opts).map(([k, v]) => k + '. ' + v)
+  }
+  return []
 }
 
 const loadPapers = async () => {

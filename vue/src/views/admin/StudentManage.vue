@@ -3,6 +3,8 @@
     <div class="page-header">
       <h2>学生管理</h2>
       <div>
+        <el-button @click="handleDownloadTemplate">下载模板</el-button>
+        <el-button type="primary" @click="importVisible = true">批量导入</el-button>
         <el-button type="success" @click="handleAdd">新增学生</el-button>
       </div>
     </div>
@@ -61,12 +63,28 @@
         <el-button type="primary" :loading="saving" @click="handleSave">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="importVisible" title="批量导入学生" width="480px" @closed="importFile = null">
+      <input ref="fileInputRef" type="file" accept=".xlsx,.xls" style="display:none" @change="handleFileSelected" />
+      <div class="upload-zone" @click="$refs.fileInputRef.click()" @dragover.prevent @drop.prevent="handleDrop">
+        <el-icon :size="48" color="#409eff"><upload-filled /></el-icon>
+        <div class="upload-text">{{ importFile ? importFile.name : '将Excel文件拖到此处，或点击上传' }}</div>
+      </div>
+      <div style="margin-top:12px; color:#909399; font-size:13px">
+        模板格式：学号、姓名、班级ID（班级ID可在院系/班级管理页面查看）
+      </div>
+      <template #footer>
+        <el-button @click="importVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importing" @click="doImport">开始导入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { UploadFilled } from '@element-plus/icons-vue'
 import { adminApi } from '@/api'
 import { forceCleanDialogs } from '@/utils/dialog'
 
@@ -80,6 +98,54 @@ const saving = ref(false)
 const editingId = ref(null)
 const form = ref({ studentNo: '', studentName: '', major: '', grade: '', classId: null })
 const classList = ref([])
+const importVisible = ref(false)
+const importFile = ref(null)
+const importing = ref(false)
+const fileInputRef = ref(null)
+
+const handleDownloadTemplate = async () => {
+  try {
+    const res = await adminApi.downloadTemplate()
+    const url = URL.createObjectURL(res)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'student_template.xlsx'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage.error('下载模板失败')
+  }
+}
+
+const handleFileSelected = (e) => {
+  const file = e.target.files?.[0]
+  if (file) importFile.value = file
+  e.target.value = ''
+}
+
+const handleDrop = (e) => {
+  const file = e.dataTransfer?.files?.[0]
+  if (file) importFile.value = file
+}
+
+const doImport = async () => {
+  if (!importFile.value) {
+    ElMessage.warning('请先选择Excel文件')
+    return
+  }
+  importing.value = true
+  try {
+    await adminApi.importStudents(importFile.value)
+    ElMessage.success('导入成功')
+    importVisible.value = false
+    importFile.value = null
+    loadData()
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || e?.data?.message || '导入失败')
+  } finally {
+    importing.value = false
+  }
+}
 
 const getClassName = (classId) => {
   if (!classId) return '-'
@@ -177,3 +243,16 @@ onBeforeUnmount(() => {
   forceCleanDialogs()
 })
 </script>
+
+<style scoped>
+.upload-zone {
+  border: 2px dashed #dcdfe6;
+  border-radius: 8px;
+  padding: 36px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+.upload-zone:hover { border-color: #409eff; }
+.upload-text { margin-top: 8px; color: #606266; font-size: 14px; }
+</style>

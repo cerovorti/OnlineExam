@@ -144,7 +144,10 @@ const loadPapers = async () => {
     const res = await teacherApi.getPapers({ pageSize: 100 })
     const data = res.data
     papers.value = data?.records || (Array.isArray(data) ? data : [])
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.error('[PublishExam] loadPapers error:', e)
+    ElMessage.warning('加载试卷列表失败，请确认后端是否启动')
+  }
 }
 
 const loadClasses = async () => {
@@ -200,7 +203,13 @@ const handleDelete = async (row) => {
 
 const openPublishDialog = async (row) => {
   currentExam.value = row
+  examClasses.value = []
   publishVisible.value = true
+  // 加载已有班级分配
+  try {
+    const res = await teacherApi.getExamClasses(row.id)
+    examClasses.value = res.data?.records || (Array.isArray(res.data) ? res.data : [])
+  } catch (e) { /* ignore */ }
 }
 
 const addClassToExam = async (classId) => {

@@ -220,6 +220,9 @@ export const teacherApi = {
   },
 
   // 考试班级分配
+  getExamClasses(examId) {
+    return request.get(`/teacher/exams/${examId}/classes`)
+  },
   addClassToExam(examId, data) {
     return request.post(`/teacher/exams/${examId}/classes`, data)
   },
